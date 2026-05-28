@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacts Manager | Restudio</title>
+
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Tiny5 Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --topbar-height: 64px;
+            --sidebar-width: 300px;
+            --bg-dark: #000000;
+            --bg-sidebar: #f7f7f8;
+            --bg-main: #ffffff;
+            --border-color: #e0e0e0;
+            --accent: #1a73e8;
+            --accent-hover: #1557b0;
+            --accent-light: #e8f0fe;
+            --text-primary: #1a1a1a;
+            --text-secondary: #5f6368;
+            --text-sidebar: #3c4043;
+            --danger: #d93025;
+            --danger-hover: #b3261e;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.2);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: #f0f0f2;
+            color: var(--text-primary);
+            direction: ltr;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .topbar {
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+            height: var(--topbar-height); 
+            background: #000;
+            display: flex; 
+            align-items: center; 
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 0 20px; 
+            box-shadow: none; 
+            flex-shrink: 0; 
+            border-bottom: 1px solid #222;
+        }
+        
+        .topbar .logo-img { 
+            height: 40px; 
+            width: auto; 
+            object-fit: contain; 
+            border-radius: 6px; 
+            flex-shrink: 0;
+        }
+        
+        .topbar .logo-text {
+            font-family: 'Tiny5', 'Courier New', monospace; 
+            font-size: 26px;
+            color: #ffffff; 
+            letter-spacing: 2px; 
+            text-transform: lowercase; 
+            line-height: 1;
+            user-select: none; 
+            white-space: nowrap;
+        }
+
+        .main-layout { display: flex; flex: 1; min-height: 0; }
+        .content-area { flex: 1; padding: 28px 32px; overflow-y: auto; background: var(--bg-main); min-width: 0; }
+        .section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .section-title .material-icons { font-size: 28px; }
+
+        .sidebar {
+            width: var(--sidebar-width); background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color); padding: 20px 16px;
+            display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; overflow-y: auto; order: 0;
+        }
+        .sidebar .sidebar-label { display: flex; align-items: center; gap: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-secondary); margin-bottom: 4px; padding: 0 4px; font-weight: 600; }
+        .sidebar .btn-sidebar {
+            display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: var(--radius-sm);
+            font-size: 14px; font-weight: 500; cursor: pointer; transition: var(--transition);
+            border: none; background: transparent; color: var(--text-sidebar); text-align: left; width: 100%;
+            font-family: inherit; position: relative;
+        }
+        .sidebar .btn-sidebar:hover { background: #e8eaed; }
+        .sidebar .btn-sidebar.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+        .sidebar .btn-sidebar.active::before {
+            content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            width: 3px; height: 60%; background: var(--accent); border-radius: 0 4px 4px 0;
+        }
+        .sidebar .btn-create { background: var(--accent); color: #fff; font-weight: 600; justify-content: center; border-radius: var(--radius-md); padding: 14px; font-size: 15px; margin-bottom: 6px; box-shadow: var(--shadow-sm); }
+        .sidebar .btn-create:hover { background: var(--accent-hover); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+        .sidebar .btn-create.active { background: var(--accent-hover); color: #fff; }
+        .sidebar .btn-create.active::before { display: none; }
+        .sidebar .btn-danger-sidebar { 
+            background: #fff; 
+            color: var(--danger); 
+            border: 1px solid #fce8e6;
+            margin-top: 8px;
+            justify-content: center;
+        }
+        .sidebar .btn-danger-sidebar:hover { background: #fce8e6; border-color: var(--danger); }
+        .sidebar .divider { height: 1px; background: var(--border-color); margin: 8px 0; border: none; }
+        .sidebar .contact-count-badge {
+            display: inline-block; background: #d2e3fc; color: var(--accent); font-size: 12px; font-weight: 700;
+            padding: 2px 10px; border-radius: 20px; margin-left: auto; min-width: 26px; text-align: center;
+        }
+
+        .avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); margin: 0 auto 12px; display: block; }
+        .avatar-options { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .avatar-option { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid transparent; transition: var(--transition); }
+        .avatar-option:hover { border-color: var(--accent); transform: scale(1.05); }
+        .contact-avatar-small { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 6px; vertical-align: middle; }
+
+        .contacts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .contact-card { background: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px 20px; transition: var(--transition); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 8px; }
+        .contact-card:hover { box-shadow: var(--shadow-md); border-color: #c4c7cc; transform: translateY(-2px); }
+        .contact-card .contact-name { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .contact-card .contact-detail { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+        .card-actions { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+        .btn-sm { display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border-color); background: #fff; transition: var(--transition); font-family: inherit; text-decoration: none; color: inherit; }
+        .btn-sm:hover { background: #f1f3f4; }
+        .btn-sm.danger { color: var(--danger); border-color: #fce8e6; }
+        .btn-sm.danger:hover { background: #fce8e6; border-color: var(--danger); }
+
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:200; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
+        .modal-dialog { background: #fff; border-radius: var(--radius-lg); width: 90%; max-width: 520px; box-shadow: var(--shadow-lg); padding: 28px 24px; position: relative; animation: slideUp 0.25s ease; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; top:12px; right:12px; background: transparent; border: none; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; width:36px; height:36px; border-radius:50%; }
+        .modal-close:hover { background: #f1f3f4; color:#000; }
+        .modal-avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin: 0 auto 16px; display: block; border: 3px solid var(--border-color); }
+        .modal-name { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 16px; }
+        .modal-info { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .modal-info-item { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; border-top: 1px solid #eee; padding-top: 16px; }
+        .modal-btn { display: inline-flex; align-items: center; gap:6px; padding: 10px 20px; border-radius: 24px; font-size:14px; font-weight:500; cursor:pointer; border:1px solid var(--border-color); background:#fff; transition: var(--transition); font-family:inherit; text-decoration:none; color: var(--text-primary); }
+        .modal-btn:hover { background: #f1f3f4; }
+        .modal-btn.primary { background: var(--accent); color:#fff; border-color:var(--accent); }
+        .modal-btn.primary:hover { background: var(--accent-hover); }
+        .modal-map-container { height: 200px; border-radius: var(--radius-sm); overflow: hidden; margin: 12px 0; border:1px solid var(--border-color); }
+
+        .form-container { max-width: 560px; background: #fafbfc; border:1px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px 30px; box-shadow: var(--shadow-sm); }
+        .form-container h3 { margin-bottom:20px; font-size:18px; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+        .form-group input, .form-group textarea { width:100%; padding:10px 14px; border:1px solid #d1d5db; border-radius: var(--radius-sm); font-size:14px; font-family:inherit; transition: var(--transition); background:#fff; }
+        .form-group input:focus, .form-group textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(26,115,232,0.1); }
+        .form-group textarea { resize:vertical; min-height:80px; }
+        .btn-submit { display:flex; align-items:center; gap:6px; background:var(--accent); color:#fff; border:none; padding:12px 28px; border-radius:24px; font-size:15px; font-weight:600; cursor:pointer; transition: var(--transition); font-family:inherit; }
+        .btn-submit:hover { background:var(--accent-hover); box-shadow:var(--shadow-md); }
+        .btn-cancel { display:flex; align-items:center; gap:6px; background:#fff; color:var(--text-primary); border:1px solid var(--border-color); padding:12px 28px; border-radius:24px; font-size:15px; font-weight:500; cursor:pointer; transition: var(--transition); font-family:inherit; margin-left:10px; }
+        .btn-cancel:hover { background:#f1f3f4; }
+
+        .groups-list { display:flex; flex-direction:column; gap:14px; }
+        .group-card { background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:18px 20px; box-shadow:var(--shadow-sm); transition: var(--transition); cursor:pointer; }
+        .group-card:hover { box-shadow:var(--shadow-md); }
+        .group-card .group-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .group-card .group-name { font-size:17px; font-weight:700; display:flex; align-items:center; gap:6px; }
+        .group-card .group-meta { font-size:13px; color:var(--text-secondary); }
+        .group-card .group-members-expand { margin-top:12px; padding-top:12px; border-top:1px solid #eee; display:none; }
+        .group-card.expanded .group-members-expand { display:block; }
+        .group-member-tag { display:inline-flex; align-items:center; gap:4px; background:#e8f0fe; color:var(--accent); padding:4px 10px; border-radius:16px; font-size:12px; margin:3px 4px; font-weight:500; }
+        .group-avatar-tiny { width:20px; height:20px; border-radius:50%; object-fit:cover; margin-right:4px; vertical-align:middle; }
+        .checkbox-list { max-height:200px; overflow-y:auto; border:1px solid #d1d5db; border-radius:var(--radius-sm); padding:10px; background:#fff; }
+        .checkbox-list label { display:flex; align-items:center; gap:8px; padding:8px 6px; cursor:pointer; border-radius:4px; transition: var(--transition); font-size:14px; }
+        .checkbox-list label:hover { background:#f5f5f5; }
+        .checkbox-list input[type="checkbox"] { width:18px; height:18px; cursor:pointer; accent-color:var(--accent); }
+
+        .empty-state { text-align:center; padding:60px 20px; color:var(--text-secondary); }
+        .empty-state .empty-image { width:200px; height:auto; margin:0 auto 16px; display:block; opacity:0.8; }
+        .empty-state h3 { font-size:20px; margin-bottom:8px; color:var(--text-primary); }
+        .toast-container { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:999; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+        .toast { background:#1a1a1a; color:#fff; padding:12px 24px; border-radius:24px; font-size:14px; font-weight:500; box-shadow:0 6px 20px rgba(0,0,0,0.25); animation:slideUpToast 0.35s ease-out, fadeOutToast 0.35s ease-out 2.5s forwards; pointer-events:auto; text-align:center; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes slideUp { from { transform:translateY(30px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+        @keyframes slideUpToast { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeOutToast { to { opacity:0; transform:translateY(-10px); } }
+
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .sidebar { width:100%; flex-direction:row; flex-wrap:wrap; gap:8px; padding:12px; border-right:none; border-bottom:1px solid var(--border-color); overflow-x:auto; flex-shrink:0; }
+            .sidebar .btn-sidebar { flex:1; min-width:120px; justify-content:center; font-size:12px; padding:10px; }
+            .sidebar .btn-create { flex:2; }
+            .sidebar .divider { display:none; } .sidebar .sidebar-label { display:none; } .sidebar .contact-count-badge { display:none; }
+            .content-area { padding:16px; } .contacts-grid { grid-template-columns:1fr; }
+            .topbar .logo-text { font-size:20px; } .topbar .logo-img { height:30px; }
+            .form-container { max-width:100%; padding:16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="topbar">
+        <img class="logo-img" src="https://i.postimg.cc/90CzkZm3/swrh-restudio.png" alt="Restudio Logo" onerror="this.style.display='none'">
+        <span class="logo-text">contacts</span>
+    </header>
+
+    <div class="main-layout">
+        <aside class="sidebar" id="sidebar">
+            <span class="sidebar-label"><span class="material-icons">menu</span> Menu</span>
+            <button class="btn-sidebar btn-create active" id="btnCreateContact" onclick="showCreateForm()">
+                <span class="material-icons">add</span> Create a new contact
+            </button>
+            <hr class="divider">
+            <button class="btn-sidebar" id="btnContacts" onclick="showContactsList()">
+                <span class="material-icons">contacts</span> Contacts
+                <span class="contact-count-badge" id="contactCountBadge">0</span>
+            </button>
+            <button class="btn-sidebar" id="btnGroups" onclick="showGroupsView()">
+                <span class="material-icons">groups</span> Groups
+            </button>
+            <hr class="divider">
+            <button class="btn-sidebar btn-danger-sidebar" id="btnClearData" onclick="clearAllData()">
+                <span class="material-icons">delete_sweep</span> Clear All Data
+            </button>
+        </aside>
+        <main class="content-area" id="contentArea"></main>
+    </div>
+
+    <div id="modalContainer"></div>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+    <script>
+        (function() {
+            const STORAGE_KEY_CONTACTS = 'swrh_contacts_v7';
+            const STORAGE_KEY_GROUPS = 'swrh_groups_v7';
+            const DEFAULT_AVATAR = 'https://i.postimg.cc/kXcs5vzW/lqtt-shasht-2026-05-23-011056.png';
+            const AVATAR_OPTIONS = [
+                DEFAULT_AVATAR,
+                'https://i.postimg.cc/YqnFVnJ0/glyphs-1779945208550.png',
+                'https://i.postimg.cc/xdHbX0qk/shapes-1779945226820.png',
+                'https://i.postimg.cc/mDs1M0FX/stripes-1779945220694.png',
+                'https://i.postimg.cc/8ckFXM4p/initial-face-1779945199040.png'
+            ];
+
+            let contacts = [], groups = [], activeView = 'create', editingContactId = null, editingGroupId = null;
+
+            function loadData() {
+                const storedContacts = localStorage.getItem(STORAGE_KEY_CONTACTS);
+                const storedGroups = localStorage.getItem(STORAGE_KEY_GROUPS);
+                contacts = storedContacts ? JSON.parse(storedContacts) : [];
+                groups = storedGroups ? JSON.parse(storedGroups) : [];
+                console.log('Data loaded from localStorage', { contactsCount: contacts.length, groupsCount: groups.length });
+            }
+            
+            function saveContacts() { 
+                localStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(contacts));
+                console.log('Contacts saved to localStorage');
+            }
+            
+            function saveGroups() { 
+                localStorage.setItem(STORAGE_KEY_GROUPS, JSON.stringify(groups));
+                console.log('Groups saved to localStorage');
+            }
+            
+            function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2,6); }
+            function getContactById(id) { return contacts.find(c => c.id === id); }
+            
+            function updateBadge() { 
+                const b = document.getElementById('contactCountBadge'); 
+                if(b) b.textContent = contacts.length; 
+            }
+            
+            function setActiveSidebarButton(id) {
+                document.querySelectorAll('.sidebar .btn-sidebar').forEach(b => b.classList.remove('active'));
+                document.getElementById(id)?.classList.add('active');
+            }
+            
+            function showToast(msg) {
+                const t = document.createElement('div'); t.className='toast'; t.textContent=msg;
+                document.getElementById('toastContainer').appendChild(t);
+                setTimeout(() => t.remove(), 3000);
+            }
+            
+            function escapeHtml(str) { 
+                if(!str) return '';
+                const d=document.createElement('div'); 
+                d.textContent=str; 
+                return d.innerHTML; 
+            }
+
+            // Clear all data from localStorage
+            window.clearAllData = function() {
+                if(confirm('⚠️ Warning: This will delete ALL contacts and groups permanently. Are you sure?')) {
+                    localStorage.removeItem(STORAGE_KEY_CONTACTS);
+                    localStorage.removeItem(STORAGE_KEY_GROUPS);
+                    contacts = [];
+                    groups = [];
+                    updateBadge();
+                    showToast('All data cleared successfully.');
+                    // Refresh the current view
+                    if(activeView === 'contacts') showContactsList();
+                    else if(activeView === 'groups') showGroupsView();
+                    else showCreateForm();
+                }
+            };
+
+            // ==================== MODAL WITH DETAILED MAP ====================
+            function openContactModal(contact) {
+                const hasEmail = contact.email && contact.email.trim().length > 0;
+                const locationStr = contact.location ? contact.location.trim() : '';
+                let validCoords = null;
+                if (locationStr) {
+                    const parts = locationStr.split(',').map(s => s.trim());
+                    if (parts.length === 2) {
+                        const lat = parseFloat(parts[0]);
+                        const lng = parseFloat(parts[1]);
+                        if (!isNaN(lat) && !isNaN(lng)) validCoords = { lat, lng };
+                    }
+                }
+
+                const mapHtml = validCoords ? `
+                    <div class="modal-map-container" id="modalMap-${contact.id}"></div>
+                ` : '';
+
+                const html = `
+                    <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeModal()">
+                        <div class="modal-dialog" onclick="event.stopPropagation()">
+                            <button class="modal-close" onclick="closeModal()"><span class="material-icons">close</span></button>
+                            <img class="modal-avatar" src="${escapeHtml(contact.avatar || DEFAULT_AVATAR)}" onerror="this.src='${DEFAULT_AVATAR}'" alt="Avatar">
+                            <div class="modal-name">${escapeHtml(contact.name)}</div>
+                            <div class="modal-info">
+                                <div class="modal-info-item"><span class="material-icons">call</span> ${escapeHtml(contact.phone)}</div>
+                                ${hasEmail ? `<div class="modal-info-item"><span class="material-icons">mail</span> ${escapeHtml(contact.email)}</div>` : ''}
+                                ${contact.notes ? `<div class="modal-info-item"><span class="material-icons">description</span> ${escapeHtml(contact.notes)}</div>` : ''}
+                                ${locationStr ? `<div class="modal-info-item"><span class="material-icons">location_on</span> ${escapeHtml(locationStr)}</div>` : ''}
+                            </div>
+                            ${mapHtml}
+                            <div class="modal-actions">
+                                ${hasEmail ? `<a href="mailto:${escapeHtml(contact.email)}" class="modal-btn"><span class="material-icons">mail</span> Mail</a>` : ''}
+                                <a href="tel:${escapeHtml(contact.phone)}" class="modal-btn"><span class="material-icons">call</span> Call</a>
+                                <button class="modal-btn" onclick="editContact('${contact.id}'); closeModal();"><span class="material-icons">edit</span> Edit</button>
+                                <button class="modal-btn danger" onclick="deleteContact('${contact.id}'); closeModal();"><span class="material-icons">delete</span> Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('modalContainer').innerHTML = html;
+
+                if (validCoords) {
+                    setTimeout(() => {
+                        const mapEl = document.getElementById(`modalMap-${contact.id}`);
+                        if (mapEl && typeof maplibregl !== 'undefined') {
+                            const map = new maplibregl.Map({
+                                container: `modalMap-${contact.id}`,
+                                style: {
+                                    version: 8,
+                                    sources: {
+                                        'osm-tiles': {
+                                            type: 'raster',
+                                            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                                            tileSize: 256,
+                                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                        }
+                                    },
+                                    layers: [
+                                        {
+                                            id: 'osm-tiles-layer',
+                                            type: 'raster',
+                                            source: 'osm-tiles',
+                                            minzoom: 0,
+                                            maxzoom: 19
+                                        }
+                                    ]
+                                },
+                                center: [validCoords.lng, validCoords.lat],
+                                zoom: 14,
+                                attributionControl: false
+                            });
+                            new maplibregl.Marker()
+                                .setLngLat([validCoords.lng, validCoords.lat])
+                                .addTo(map);
+                        }
+                    }, 50);
+                }
+            }
+
+            window.closeModal = function() { document.getElementById('modalContainer').innerHTML = ''; };
+
+            // ==================== AVATAR HELPERS ====================
+            window.selectAvatar = function(url) {
+                const preview = document.getElementById('avatarPreview');
+                const input = document.getElementById('avatarInput');
+                if(preview) preview.src = url;
+                if(input) input.value = url;
+            };
+            
+            window.handleAvatarUpload = function(event) {
+                const file = event.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const preview = document.getElementById('avatarPreview');
+                    const input = document.getElementById('avatarInput');
+                    if(preview) preview.src = e.target.result;
+                    if(input) input.value = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                event.target.value = '';
+            };
+
+            // ==================== CREATE / EDIT CONTACT ====================
+            function showCreateForm(contactToEdit = null) {
+                activeView = 'create';
+                editingContactId = contactToEdit?.id || null;
+                setActiveSidebarButton('btnCreateContact');
+                const isEdit = !!contactToEdit;
+                const title = isEdit ? 'Edit Contact' : 'Create a new contact';
+                const icon = isEdit ? 'edit' : 'person_add';
+                const nameVal = isEdit ? escapeHtml(contactToEdit.name) : '';
+                const phoneVal = isEdit ? escapeHtml(contactToEdit.phone) : '';
+                const emailVal = isEdit ? escapeHtml(contactToEdit.email || '') : '';
+                const notesVal = isEdit ? escapeHtml(contactToEdit.notes || '') : '';
+                const locationVal = isEdit ? escapeHtml(contactToEdit.location || '') : '';
+                const currentAvatar = contactToEdit?.avatar || DEFAULT_AVATAR;
+
+                const content = `
+                    <div class="form-container">
+                        <h3><span class="material-icons">${icon}</span> ${title}</h3>
+                        <form id="contactForm" onsubmit="return false;">
+                            <div class="form-group text-center">
+                                <img id="avatarPreview" class="avatar-preview" src="${escapeHtml(currentAvatar)}" onerror="this.src='${DEFAULT_AVATAR}'">
+                                <input type="hidden" id="avatarInput" value="${escapeHtml(currentAvatar)}">
+                                <div class="avatar-options">${AVATAR_OPTIONS.map(u => `<img class="avatar-option" src="${u}" onclick="selectAvatar('${u}')" onerror="this.style.display='none'">`).join('')}</div>
+                                <label for="avatarUpload" class="btn-cancel" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;"><span class="material-icons">upload</span> Upload from computer</label>
+                                <input type="file" id="avatarUpload" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
+                            </div>
+                            <div class="form-group"><label><span class="material-icons">person</span> Full Name *</label><input type="text" id="contactName" value="${nameVal}" required></div>
+                            <div class="form-group"><label><span class="material-icons">call</span> Phone Number *</label><input type="tel" id="contactPhone" value="${phoneVal}" required></div>
+                            <div class="form-group"><label><span class="material-icons">mail</span> Email</label><input type="email" id="contactEmail" value="${emailVal}"></div>
+                            <div class="form-group"><label><span class="material-icons">location_on</span> Location (lat, lng)</label><input type="text" id="contactLocation" placeholder="e.g. 24.7136,46.6753" value="${locationVal}"></div>
+                            <div class="form-group"><label><span class="material-icons">description</span> Notes</label><textarea id="contactNotes">${notesVal}</textarea></div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <button type="button" class="btn-submit" id="submitContactBtn"><span class="material-icons">${isEdit?'save':'add'}</span> ${isEdit?'Save Changes':'Add Contact'}</button>
+                                <button type="button" class="btn-cancel" onclick="showContactsList()"><span class="material-icons">close</span> Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                document.getElementById('contentArea').innerHTML = content;
+                document.getElementById('submitContactBtn').addEventListener('click', handleContactSubmit);
+                document.getElementById('contactForm').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); handleContactSubmit(); } });
+            }
+
+            function handleContactSubmit() {
+                const name = document.getElementById('contactName').value.trim();
+                const phone = document.getElementById('contactPhone').value.trim();
+                const email = document.getElementById('contactEmail').value.trim();
+                const notes = document.getElementById('contactNotes').value.trim();
+                const location = document.getElementById('contactLocation').value.trim();
+                const avatar = document.getElementById('avatarInput').value;
+                if(!name || !phone) { showToast('Full Name and Phone Number are required.'); return; }
+                if(editingContactId) {
+                    const idx = contacts.findIndex(c => c.id === editingContactId);
+                    if(idx >=0) { contacts[idx] = {...contacts[idx], name, phone, email, notes, location, avatar}; showToast('Contact updated.'); }
+                    editingContactId = null;
+                } else {
+                    contacts.push({ id: generateId(), name, phone, email, notes, location, avatar, createdAt: new Date().toISOString() });
+                    showToast('Contact added.');
+                }
+                saveContacts(); updateBadge(); showContactsList();
+            }
+
+            // ==================== CONTACTS LIST ====================
+            function showContactsList() {
+                activeView = 'contacts'; editingContactId = null; setActiveSidebarButton('btnContacts'); updateBadge();
+                if(!contacts.length) {
+                    document.getElementById('contentArea').innerHTML = `<div class="empty-state"><img src="https://i.postimg.cc/59snm3N2/telephone.png" class="empty-image"><h3>No contacts yet</h3><p>Click <strong>Create a new contact</strong> to add your first contact.</p></div>`;
+                    return;
+                }
+                const cards = contacts.map(c => `
+                    <div class="contact-card">
+                        <div class="contact-name"><img src="${escapeHtml(c.avatar||DEFAULT_AVATAR)}" class="contact-avatar-small" onerror="this.src='${DEFAULT_AVATAR}'">${escapeHtml(c.name)}</div>
+                        <div class="contact-detail"><span class="material-icons">call</span>${escapeHtml(c.phone)}</div>
+                        ${c.email ? `<div class="contact-detail"><span class="material-icons">mail</span>${escapeHtml(c.email)}</div>` : ''}
+                        ${c.notes ? `<div class="contact-detail"><span class="material-icons">description</span>${escapeHtml(c.notes)}</div>` : ''}
+                        <div class="card-actions">
+                            <button class="btn-sm" onclick="editContact('${c.id}')"><span class="material-icons">edit</span>Edit</button>
+                            <button class="btn-sm danger" onclick="deleteContact('${c.id}')"><span class="material-icons">delete</span>Delete</button>
+                            <button class="btn-sm" onclick="openContactModalById('${c.id}')"><span class="material-icons">visibility</span>View Details</button>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('contentArea').innerHTML = `<div class="section-title"><span class="material-icons">contacts</span> Contacts (${contacts.length})</div><div class="contacts-grid">${cards}</div>`;
+            }
+
+            window.openContactModalById = function(id) {
+                const contact = getContactById(id);
+                if(contact) openContactModal(contact);
+            };
+            
+            window.editContact = function(id) { const c = getContactById(id); if(c) showCreateForm(c); };
+            
+            window.deleteContact = function(id) {
+                const c = getContactById(id); if(!c) return;
+                if(confirm(`Delete "${c.name}"?`)) {
+                    contacts = contacts.filter(x => x.id !== id);
+                    groups.forEach(g => g.memberIds = g.memberIds.filter(mid => mid !== id));
+                    saveContacts(); saveGroups(); updateBadge();
+                    showToast('Contact deleted.');
+                    if(activeView === 'contacts') showContactsList(); else if(activeView === 'groups') showGroupsView();
+                }
+            };
+
+            // ==================== GROUPS ====================
+            function showGroupsView() {
+                activeView = 'groups'; editingGroupId = null; setActiveSidebarButton('btnGroups'); updateBadge();
+                const groupsWithMembers = groups.map(g => ({...g, members: g.memberIds.map(id => getContactById(id)).filter(Boolean)}));
+                if(!groups.length) {
+                    document.getElementById('contentArea').innerHTML = `<div class="section-title"><span class="material-icons">groups</span> Groups</div><div class="empty-state"><img src="https://i.postimg.cc/fRD7nSbJ/teamwork.png" class="empty-image"><h3>No groups yet</h3><p>Create a new group and add multiple contacts.</p></div><div style="text-align:center;margin-top:16px;"><button class="btn-submit" onclick="showCreateGroupForm()"><span class="material-icons">group_add</span> Create New Group</button></div>`;
+                    return;
+                }
+                const groupsHtml = groupsWithMembers.map((g,i) => `
+                    <div class="group-card" id="groupCard${i}" onclick="toggleGroupExpand(${i})">
+                        <div class="group-header"><div><span class="group-name"><span class="material-icons">folder</span>${escapeHtml(g.name)}</span><span class="group-meta">(${g.members.length} members)</span></div><div style="display:flex;gap:8px;" onclick="event.stopPropagation()"><button class="btn-sm" onclick="editGroup('${g.id}')"><span class="material-icons">edit</span>Edit</button><button class="btn-sm danger" onclick="deleteGroup('${g.id}')"><span class="material-icons">delete</span>Delete</button></div></div>
+                        <div class="group-members-expand">${g.members.length ? g.members.map(m => `<span class="group-member-tag"><img src="${escapeHtml(m.avatar||DEFAULT_AVATAR)}" class="group-avatar-tiny" onerror="this.src='${DEFAULT_AVATAR}'">${escapeHtml(m.name)}</span>`).join('') : '<span style="color:var(--text-secondary)">No members</span>'}</div>
+                    </div>
+                `).join('');
+                document.getElementById('contentArea').innerHTML = `<div class="section-title"><span class="material-icons">groups</span> Groups (${groups.length})</div><div style="margin-bottom:16px;"><button class="btn-submit" onclick="showCreateGroupForm()"><span class="material-icons">group_add</span> Create New Group</button></div><div class="groups-list">${groupsHtml}</div>`;
+            }
+            
+            window.toggleGroupExpand = function(i) { document.getElementById('groupCard'+i)?.classList.toggle('expanded'); };
+
+            function showCreateGroupForm(groupToEdit = null) {
+                if(!contacts.length) { showToast('Add contacts first.'); return; }
+                editingGroupId = groupToEdit?.id || null;
+                const isEdit = !!groupToEdit;
+                const nameVal = isEdit ? escapeHtml(groupToEdit.name) : '';
+                const selectedIds = isEdit ? groupToEdit.memberIds : [];
+                const checkboxes = contacts.map(c => `<label><input type="checkbox" value="${c.id}" ${selectedIds.includes(c.id)?'checked':''}><img src="${escapeHtml(c.avatar||DEFAULT_AVATAR)}" class="group-avatar-tiny">${escapeHtml(c.name)} — ${escapeHtml(c.phone)}</label>`).join('');
+                document.getElementById('contentArea').innerHTML = `<div class="form-container"><h3><span class="material-icons">${isEdit?'edit':'group_add'}</span>${isEdit?'Edit Group':'Create New Group'}</h3><form id="groupForm"><div class="form-group"><label><span class="material-icons">folder</span>Group Name *</label><input type="text" id="groupName" value="${nameVal}" required></div><div class="form-group"><label><span class="material-icons">people</span>Select contacts</label><div class="checkbox-list">${checkboxes}</div></div><div style="display:flex;gap:8px;"><button type="button" class="btn-submit" id="submitGroupBtn"><span class="material-icons">${isEdit?'save':'add'}</span>${isEdit?'Save Changes':'Create Group'}</button><button type="button" class="btn-cancel" onclick="showGroupsView()"><span class="material-icons">close</span>Cancel</button></div></form></div>`;
+                document.getElementById('submitGroupBtn').addEventListener('click', handleGroupSubmit);
+            }
+
+            function handleGroupSubmit() {
+                const name = document.getElementById('groupName').value.trim();
+                if(!name) { showToast('Group name required.'); return; }
+                const ids = Array.from(document.querySelectorAll('.checkbox-list input:checked')).map(cb => cb.value);
+                if(!ids.length) { showToast('Select at least one contact.'); return; }
+                if(editingGroupId) {
+                    const idx = groups.findIndex(g => g.id === editingGroupId);
+                    if(idx >=0) { groups[idx].name = name; groups[idx].memberIds = ids; showToast('Group updated.'); }
+                    editingGroupId = null;
+                } else {
+                    groups.push({ id: generateId(), name, memberIds: ids, createdAt: new Date().toISOString() });
+                    showToast('Group created.');
+                }
+                saveGroups(); showGroupsView();
+            }
+            
+            window.editGroup = function(id) { const g = groups.find(x => x.id === id); if(g) showCreateGroupForm(g); };
+            
+            window.deleteGroup = function(id) { 
+                const g = groups.find(x => x.id === id); 
+                if(!g) return; 
+                if(confirm(`Delete group "${g.name}"?`)) { 
+                    groups = groups.filter(x => x.id !== id); 
+                    saveGroups(); 
+                    showToast('Group deleted.'); 
+                    if(activeView==='groups') showGroupsView(); 
+                } 
+            };
+
+            // Expose global functions
+            window.showCreateForm = showCreateForm;
+            window.showContactsList = showContactsList;
+            window.showGroupsView = showGroupsView;
+            window.showCreateGroupForm = showCreateGroupForm;
+
+            // Initialize
+            loadData(); 
+            updateBadge(); 
+            showCreateForm();
+        })();
+    </script>
+</body>
+</html>
