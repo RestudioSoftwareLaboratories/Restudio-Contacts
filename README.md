@@ -9,3 +9,7 @@ Initial Face by DiceBear, licensed under CC0 1.0 .
 Stripes by DiceBear, licensed under CC0 1.0 .
 
 Shapes by DiceBear, licensed under CC0 1.0 .
+
+Telephone free sticker by Stickers
+
+Teamwork free sticker by kerismaker
