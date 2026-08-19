@@ -13,3 +13,5 @@ Shapes by DiceBear, licensed under CC0 1.0 .
 Telephone free sticker by Stickers
 
 Teamwork free sticker by kerismaker
+
+Blobs by DiceBear, licensed under CC0 1.0 .
