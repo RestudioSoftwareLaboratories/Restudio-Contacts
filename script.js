@@ -64,7 +64,7 @@ function validateFile(file) {
 
     var STORAGE_KEY_CONTACTS = 'swrh_contacts_pro_v2';
     var STORAGE_KEY_GROUPS = 'swrh_groups_pro_v2';
-    var DEFAULT_AVATAR = 'https://i.postimg.cc/kXcs5vzW/lqtt-shasht-2026-05-23-011056.png';
+    var DEFAULT_AVATAR = 'https://i.postimg.cc/Jh9bS2Gf/blobs-1787118466581.png';
     var AVATAR_OPTIONS = [
         DEFAULT_AVATAR,
         'https://i.postimg.cc/YqnFVnJ0/glyphs-1779945208550.png',
